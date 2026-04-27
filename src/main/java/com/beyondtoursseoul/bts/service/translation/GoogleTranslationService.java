@@ -50,7 +50,35 @@ public class GoogleTranslationService implements TranslationService {
 
     @Override
     public List<String> translateBatch(List<String> texts, String sourceLang, String targetLang) {
-        return List.of();
+        if (texts == null || texts.isEmpty()) return List.of();
+
+        try {
+            GoogleTranslationResponse response = restClient.get()
+                    .uri(uriBuilder -> {
+                        uriBuilder.queryParam("source", sourceLang)
+                                .queryParam("target", targetLang)
+                                .queryParam("key", apiKey);
+                        for (String text : texts) {
+                            uriBuilder.queryParam("q", text);
+                        }
+
+                        return uriBuilder.build();
+                    }).retrieve().body(GoogleTranslationResponse.class);
+            if (response != null && response.getData() != null) {
+
+                // 번역 후 textList
+                List<String> textList = response.getData()
+                        .getTranslations()
+                        .stream()
+                        .map(translation -> translation.getTranslatedText())
+                        .toList();
+                log.info("배치번역 결과: {},", textList);
+                return textList;
+            }
+        } catch (Exception e) {
+            log.error("배치 번역 실패: {}", e.getMessage());
+        }
+        return texts;
     }
 
 
