@@ -9,8 +9,6 @@ out/
 
 # Gradle
 .gradle/
-!gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.properties
 
 # Maven
 .mvn/timing.properties
@@ -46,6 +44,10 @@ application-secret.properties
 *.zip
 *.tar.gz
 *.rar
+
+# Gradle wrapper (must come after *.jar to override it)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
 
 # GeoJSON 데이터 파일 (용량이 크므로 직접 다운로드)
 src/main/resources/geojson/
