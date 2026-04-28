@@ -22,7 +22,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
-	implementation 'org.hibernate.orm:hibernate-spatial:6.4.4.Final'
+	implementation 'org.hibernate.orm:hibernate-spatial:7.0.0.Final'
 	implementation 'org.locationtech.jts:jts-core:1.19.0'
 	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
