@@ -1,5 +1,6 @@
 package com.beyondtoursseoul.bts.service;
 
+import com.beyondtoursseoul.bts.service.AttractionApiService;
 import com.beyondtoursseoul.bts.domain.Attraction;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TourApiServiceTest {
 
     @Autowired
-    private TourApiService tourApiService;
+    private AttractionApiService tourApiService;
 
     @Test
     void 서울_관광지_수집_성공() {

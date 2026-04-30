@@ -14,13 +14,14 @@ import org.springframework.web.client.RestClient;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
-public class TourApiService {
+public class AttractionApiService {
 
     private static final String BASE_URL = "https://apis.data.go.kr/B551011/KorService2/areaBasedList2";
-    private static final String SEOUL_RIEGN_CD = "11";
+    private static final String SEOUL_REGION_CD = "11";
     private static final String SOURCE = "TOUR_API";
     private static final int PAGE_SIZE = 1000;
 
@@ -31,7 +32,7 @@ public class TourApiService {
     @Value("${PUBLIC_DATA_API_KEY}")
     private String apiKey;
 
-    public TourApiService() {
+    public AttractionApiService() {
         this.restClient = RestClient.create();
     }
 
@@ -49,7 +50,7 @@ public class TourApiService {
             if (response == null
                     || response.getResponse() == null
                     || response.getResponse().getBody() == null) {
-                log.warn("[TourAPI] 응답 없음 — pageNo: {}", pageNo);
+                log.warn("[AttractionApi] 응답 없음 — pageNo: {}", pageNo);
                 break;
             }
 
@@ -57,12 +58,12 @@ public class TourApiService {
             totalCount = body.getTotalCount();
 
             if (body.getItems() == null || body.getItems().getItem() == null) {
-                log.warn("[TourAPI] 항목 없음 — pageNo: {}", pageNo);
+                log.warn("[AttractionApi] 항목 없음 — pageNo: {}", pageNo);
                 break;
             }
 
             List<Item> items = body.getItems().getItem();
-            log.info("[TourAPI] pageNo={}, totalCount={}, 수신={}건", pageNo, totalCount, items.size());
+            log.info("[AttractionApi] pageNo={}, totalCount={}, 수신={}건", pageNo, totalCount, items.size());
 
             for (Item item : items) {
                 toAttraction(item).ifPresent(result::add);
@@ -71,25 +72,25 @@ public class TourApiService {
             pageNo++;
         }
 
-        log.info("[TourAPI] 서울 관광지 수집 완료: {}건", result.size());
+        log.info("[AttractionApi] 서울 관광지 수집 완료: {}건", result.size());
         return result;
     }
 
-    private java.util.Optional<com.beyondtoursseoul.bts.domain.Attraction> toAttraction(Item item) {
+    private Optional<com.beyondtoursseoul.bts.domain.Attraction> toAttraction(Item item) {
         if (item.getMapX() == null || item.getMapX().isBlank()
                 || item.getMapY() == null || item.getMapY().isBlank()) {
-            return java.util.Optional.empty();
+            return Optional.empty();
         }
 
         try {
             double lng = Double.parseDouble(item.getMapX());
             double lat = Double.parseDouble(item.getMapY());
 
-            if (lng == 0.0 || lat == 0.0) return java.util.Optional.empty();
+            if (lng == 0.0 || lat == 0.0) return Optional.empty();
 
             Point geom = GF.createPoint(new Coordinate(lng, lat));
 
-            return java.util.Optional.of(
+            return Optional.of(
                     com.beyondtoursseoul.bts.domain.Attraction.builder()
                             .externalId(item.getContentId())
                             .name(item.getTitle())
@@ -101,8 +102,8 @@ public class TourApiService {
                             .build()
             );
         } catch (NumberFormatException e) {
-            log.warn("[TourAPI] 좌표 파싱 실패 contentId={}: {}", item.getContentId(), e.getMessage());
-            return java.util.Optional.empty();
+            log.warn("[AttractionApi] 좌표 파싱 실패 contentId={}: {}", item.getContentId(), e.getMessage());
+            return Optional.empty();
         }
     }
 
@@ -115,6 +116,6 @@ public class TourApiService {
                 + "&MobileApp=BTS"
                 + "&_type=json"
                 + "&arrange=A"
-                + "&lDongRegnCd=" + SEOUL_RIEGN_CD;
+                + "&lDongRegnCd=" + SEOUL_REGION_CD;
     }
 }
