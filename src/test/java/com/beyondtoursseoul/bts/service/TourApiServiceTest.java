@@ -14,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TourApiServiceTest {
 
     @Autowired
-    private AttractionApiService tourApiService;
+    private AttractionApiService attractionApiService;
 
     @Test
     void 서울_관광지_수집_성공() {
-        List<Attraction> attractions = tourApiService.fetchSeoulAttractions();
+        List<Attraction> attractions = attractionApiService.fetchSeoulAttractions();
 
         System.out.println("수집된 관광지 수: " + attractions.size());
         if (!attractions.isEmpty()) {
