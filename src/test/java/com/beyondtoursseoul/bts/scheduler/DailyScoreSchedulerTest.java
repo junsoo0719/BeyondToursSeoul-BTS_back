@@ -2,6 +2,7 @@ package com.beyondtoursseoul.bts.scheduler;
 
 import com.beyondtoursseoul.bts.repository.DongPopulationRawRepository;
 import com.beyondtoursseoul.bts.service.LocalResidentApiService;
+import com.beyondtoursseoul.bts.service.score.AttractionScoreService;
 import com.beyondtoursseoul.bts.service.score.LocalScoreCalculateService;
 import com.beyondtoursseoul.bts.service.score.PopulationCollectService;
 import org.junit.jupiter.api.Test;
@@ -22,25 +23,27 @@ class DailyScoreSchedulerTest {
     @Mock LocalResidentApiService localResidentApiService;
     @Mock PopulationCollectService populationCollectService;
     @Mock LocalScoreCalculateService localScoreCalculateService;
+    @Mock AttractionScoreService attractionScoreService;
     @Mock DongPopulationRawRepository rawRepository;
 
     @InjectMocks DailyScoreScheduler scheduler;
 
     @Test
-    void 신규_날짜면_수집과_계산이_순서대로_실행된다() {
+    void 신규_날짜면_수집_계산_관광지점수_순서대로_실행된다() {
         LocalDate targetDate = LocalDate.of(2026, 4, 28);
         when(localResidentApiService.findLatestAvailableDate()).thenReturn(targetDate);
         when(rawRepository.existsByDate(targetDate)).thenReturn(false);
 
         scheduler.run();
 
-        InOrder order = inOrder(populationCollectService, localScoreCalculateService);
+        InOrder order = inOrder(populationCollectService, localScoreCalculateService, attractionScoreService);
         order.verify(populationCollectService).collect(targetDate);
         order.verify(localScoreCalculateService).calculateAndSave(targetDate);
+        order.verify(attractionScoreService).calculateAndSave(targetDate);
     }
 
     @Test
-    void 이미_수집된_날짜면_수집과_계산을_건너뛴다() {
+    void 이미_수집된_날짜면_모든_단계를_건너뛴다() {
         LocalDate targetDate = LocalDate.of(2026, 4, 28);
         when(localResidentApiService.findLatestAvailableDate()).thenReturn(targetDate);
         when(rawRepository.existsByDate(targetDate)).thenReturn(true);
@@ -49,6 +52,7 @@ class DailyScoreSchedulerTest {
 
         verify(populationCollectService, never()).collect(any());
         verify(localScoreCalculateService, never()).calculateAndSave(any());
+        verify(attractionScoreService, never()).calculateAndSave(any());
     }
 
     @Test
@@ -60,10 +64,11 @@ class DailyScoreSchedulerTest {
 
         verify(populationCollectService, never()).collect(any());
         verify(localScoreCalculateService, never()).calculateAndSave(any());
+        verify(attractionScoreService, never()).calculateAndSave(any());
     }
 
     @Test
-    void 수집_실패시_계산을_실행하지_않고_앱이_죽지_않는다() {
+    void 수집_실패시_이후_단계를_실행하지_않고_앱이_죽지_않는다() {
         LocalDate targetDate = LocalDate.of(2026, 4, 28);
         when(localResidentApiService.findLatestAvailableDate()).thenReturn(targetDate);
         when(rawRepository.existsByDate(targetDate)).thenReturn(false);
@@ -72,5 +77,6 @@ class DailyScoreSchedulerTest {
         assertDoesNotThrow(() -> scheduler.run());
 
         verify(localScoreCalculateService, never()).calculateAndSave(any());
+        verify(attractionScoreService, never()).calculateAndSave(any());
     }
 }

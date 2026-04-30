@@ -3,9 +3,10 @@ package com.beyondtoursseoul.bts.runner;
 import com.beyondtoursseoul.bts.repository.AttractionRepository;
 import com.beyondtoursseoul.bts.repository.DongLocalScoreRepository;
 import com.beyondtoursseoul.bts.repository.DongPopulationRawRepository;
+import com.beyondtoursseoul.bts.service.AttractionApiService;
 import com.beyondtoursseoul.bts.service.AttractionMappingService;
 import com.beyondtoursseoul.bts.service.LocalResidentApiService;
-import com.beyondtoursseoul.bts.service.TourApiService;
+import com.beyondtoursseoul.bts.service.score.AttractionScoreService;
 import com.beyondtoursseoul.bts.service.score.LocalScoreCalculateService;
 import com.beyondtoursseoul.bts.service.score.PopulationCollectService;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,8 @@ public class InitialDataLoader implements ApplicationRunner {
     private final PopulationCollectService populationCollectService;
     private final LocalScoreCalculateService localScoreCalculateService;
     private final LocalResidentApiService localResidentApiService;
-    private final TourApiService tourApiService;
+    private final AttractionApiService attractionApiService;
+    private final AttractionScoreService attractionScoreService;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -62,7 +64,7 @@ public class InitialDataLoader implements ApplicationRunner {
         if (attractionRepository.count() == 0) {
             log.info("서울 관광지 초기 수집 시작");
             try {
-                attractionRepository.saveAll(tourApiService.fetchSeoulAttractions());
+                attractionRepository.saveAll(attractionApiService.fetchSeoulAttractions());
                 log.info("서울 관광지 초기 수집 완료");
             } catch (Exception e) {
                 log.warn("서울 관광지 초기 수집 실패 (건너뜀): {}", e.getMessage());
@@ -80,6 +82,13 @@ public class InitialDataLoader implements ApplicationRunner {
             }
         } else {
             log.info("관광지 행정동 매핑이 이미 완료되어 있습니다.");
+        }
+
+        log.info("관광지 찐로컬 지수 계산 시작: {}", latestDate);
+        try {
+            attractionScoreService.calculateAndSave(latestDate);
+        } catch (Exception e) {
+            log.warn("관광지 찐로컬 지수 계산 실패 (건너뜀): {}", e.getMessage());
         }
     }
 }
