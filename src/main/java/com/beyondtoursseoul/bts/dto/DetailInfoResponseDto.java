@@ -10,7 +10,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class TourApiResponseDto {
+public class DetailInfoResponseDto {
 
     @JsonProperty("response")
     private Response response;
@@ -19,7 +19,6 @@ public class TourApiResponseDto {
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Response {
-
         @JsonProperty("body")
         private Body body;
     }
@@ -28,25 +27,14 @@ public class TourApiResponseDto {
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Body {
-
         @JsonProperty("items")
         private Items items;
-
-        @JsonProperty("totalCount")
-        private int totalCount;
-
-        @JsonProperty("numOfRows")
-        private int numOfRows;
-
-        @JsonProperty("pageNo")
-        private int pageNo;
     }
 
     @Getter
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Items {
-
         @JsonProperty("item")
         private List<Item> item;
     }
@@ -55,38 +43,28 @@ public class TourApiResponseDto {
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Item {
+        @JsonProperty("usetime")
+        private String usetime;
 
-        @JsonProperty("contentid")
-        private String contentId;
+        @JsonProperty("usetimeculture")
+        private String usetimeculture;
 
-        @JsonProperty("title")
-        private String title;
+        @JsonProperty("opentimefood")
+        private String opentimefood;
 
-        @JsonProperty("contenttypeid")
-        private String contentTypeId;
+        @JsonProperty("opentime")
+        private String opentime;
 
-        @JsonProperty("addr1")
-        private String addr1;
+        @JsonProperty("useseason")
+        private String useseason;
 
-        @JsonProperty("mapx")
-        private String mapX;
-
-        @JsonProperty("mapy")
-        private String mapY;
-
-        @JsonProperty("firstimage")
-        private String firstImage;
-
-        @JsonProperty("lclsSystm1")
-        private String cat1;
-
-        @JsonProperty("lclsSystm2")
-        private String cat2;
-
-        @JsonProperty("lclsSystm3")
-        private String cat3;
-
-        @JsonProperty("tel")
-        private String tel;
+        public String resolveOperatingHours() {
+            if (usetime != null && !usetime.isBlank()) return usetime;
+            if (usetimeculture != null && !usetimeculture.isBlank()) return usetimeculture;
+            if (opentimefood != null && !opentimefood.isBlank()) return opentimefood;
+            if (opentime != null && !opentime.isBlank()) return opentime;
+            if (useseason != null && !useseason.isBlank()) return useseason;
+            return null;
+        }
     }
 }

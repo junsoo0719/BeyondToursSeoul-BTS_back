@@ -42,9 +42,34 @@ public class Attraction {
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
 
+    private String thumbnail;
+
+    @Column(length = 10)
+    private String cat1;
+
+    @Column(length = 10)
+    private String cat2;
+
+    @Column(length = 10)
+    private String cat3;
+
+    @Column(columnDefinition = "TEXT")
+    private String tel;
+
+    @Column(columnDefinition = "TEXT")
+    private String overview;
+
+    @Column(name = "operating_hours", columnDefinition = "TEXT")
+    private String operatingHours;
+
+    @Column(name = "detail_fetched", nullable = false)
+    private boolean detailFetched = false;
+
     @Builder
     public Attraction(String externalId, String name, String category, String address,
-                      Point geom, String dongCode, String source, OffsetDateTime createdAt) {
+                      Point geom, String dongCode, String source, OffsetDateTime createdAt,
+                      String thumbnail, String cat1, String cat2, String cat3,
+                      String tel, String overview, String operatingHours) {
         this.externalId = externalId;
         this.name = name;
         this.category = category;
@@ -53,9 +78,23 @@ public class Attraction {
         this.dongCode = dongCode;
         this.source = source;
         this.createdAt = createdAt;
+        this.thumbnail = thumbnail;
+        this.cat1 = cat1;
+        this.cat2 = cat2;
+        this.cat3 = cat3;
+        this.tel = tel;
+        this.overview = overview;
+        this.operatingHours = operatingHours;
     }
 
     public void updateDongCode(String dongCode) {
         this.dongCode = dongCode;
+    }
+
+    public void updateDetail(String overview, String operatingHours, String tel) {
+        this.overview = overview;
+        this.operatingHours = operatingHours;
+        if (this.tel == null && tel != null) this.tel = tel;
+        this.detailFetched = true;
     }
 }
