@@ -4,6 +4,9 @@ import com.beyondtoursseoul.bts.dto.AiChatRequest;
 import com.beyondtoursseoul.bts.dto.AiChatResponse;
 import com.beyondtoursseoul.bts.service.rag.RagSearchService;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +23,7 @@ public class GroqChatService {
 
     private final RestClient restClient;
     private final RagSearchService ragSearchService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${groq.api.key:}")
     private String apiKey;
@@ -59,7 +63,7 @@ public class GroqChatService {
             throw new IllegalStateException("Groq 응답이 올바르지 않습니다.");
         }
 
-        return new AiChatResponse(response.getChoices().get(0).getMessage().getContent(), model);
+        return parseAiChatResponse(response.getChoices().get(0).getMessage().getContent());
     }
 
     private Map<String, Object> createRequestBody(AiChatRequest request) {
@@ -69,8 +73,9 @@ public class GroqChatService {
 
         return Map.of(
                 "model", model,
-                "temperature", 0.7,
-                "max_tokens", 800,
+                "temperature", 0.4,
+                "max_tokens", 1200,
+                "response_format", Map.of("type", "json_object"),
                 "messages", createMessages(request, language)
         );
     }
@@ -162,6 +167,55 @@ public class GroqChatService {
         return String.join("\n", parts);
     }
 
+    private AiChatResponse parseAiChatResponse(String rawContent) {
+        try {
+            JsonNode root = objectMapper.readTree(extractJsonObject(rawContent));
+            String answer = root.path("answer").asText(rawContent);
+            JsonNode structured = root.hasNonNull("structured")
+                    ? root.get("structured")
+                    : createEmptyStructuredResponse();
+            return new AiChatResponse(answer, structured, model);
+        } catch (Exception e) {
+            return new AiChatResponse(rawContent, createEmptyStructuredResponse(), model);
+        }
+    }
+
+    private String extractJsonObject(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        String trimmed = value.trim();
+        if (trimmed.startsWith("```")) {
+            int firstLineEnd = trimmed.indexOf('\n');
+            int fenceEnd = trimmed.lastIndexOf("```");
+            if (firstLineEnd >= 0 && fenceEnd > firstLineEnd) {
+                trimmed = trimmed.substring(firstLineEnd + 1, fenceEnd).trim();
+            }
+        }
+
+        int start = trimmed.indexOf('{');
+        int end = trimmed.lastIndexOf('}');
+        if (start >= 0 && end > start) {
+            return trimmed.substring(start, end + 1);
+        }
+        return trimmed;
+    }
+
+    private ObjectNode createEmptyStructuredResponse() {
+        ObjectNode structured = objectMapper.createObjectNode();
+        ObjectNode summary = structured.putObject("summary");
+        summary.put("title", "");
+        summary.putArray("route");
+        structured.putArray("days");
+        structured.putArray("preparation");
+        ObjectNode budget = structured.putObject("budget");
+        budget.put("perPerson", "");
+        budget.put("total", "");
+        budget.put("note", "AI 응답을 구조화하지 못했습니다. answer 값을 사용해 주세요.");
+        return structured;
+    }
+
     private String truncate(String value, int maxLength) {
         if (value.length() <= maxLength) {
             return value;
@@ -189,6 +243,19 @@ public class GroqChatService {
                 Help foreign visitors explore Seoul with practical, friendly, and accurate recommendations.
                 Answer in the requested language: %s.
                 If you are not sure about real-time availability, tell the user to check official sources.
+
+                You must return exactly one valid JSON object and nothing else.
+                Do not wrap the JSON in markdown code fences.
+                The top-level JSON object must have exactly these keys:
+                - "answer": a user-facing Korean Markdown string for the chat bubble.
+                - "structured": a non-null object for frontend rendering.
+                Never omit "structured". Never set "structured" to null.
+                The "structured" object should include:
+                - "summary": { "title": string, "route": string[] }
+                - "days": [{ "date": string, "label": string, "slots": [{ "type": string, "label": string, "placeName": string, "address": string, "reason": string }] }]
+                - "preparation": string[]
+                - "budget": { "perPerson": string, "total": string, "note": string }
+                The JSON itself is for the API response only. Do not expose raw JSON text inside "answer".
 
                 When the user asks for a travel itinerary, follow these planning rules:
                 - Always start with "전체 요약 코스" before the day-by-day plan.
